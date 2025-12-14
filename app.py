@@ -119,7 +119,7 @@ with st.sidebar:
 
 def analyze_image_with_gemini(image, api_key):
     """Uses Gemini 1.5 Flash Vision to extract nutrition info."""
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-001", google_api_key=api_key)
     
     prompt = """
     You are an expert nutritionist. Look at this food label image.
@@ -165,7 +165,7 @@ def get_fssai_context(query, api_key):
         return "No specific FSSAI regulations found for this query."
 
     # 2. Generate Answer
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-001", google_api_key=api_key)
     
     rag_prompt = f"""
     You are an expert on FSSAI (Food Safety and Standards Authority of India) regulations.

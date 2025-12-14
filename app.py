@@ -96,16 +96,17 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
 
+    /* Adaptive Backgrounds */
     .main {
-        background-color: #0e1117;
+        background-color: var(--background-color);
     }
     
-    /* Custom Card Style */
+    /* Custom Card Style - Adaptive */
     .metric-card {
-        background: linear-gradient(145deg, #1e2025, #262730);
+        background: var(--secondary-background-color);
         padding: 24px;
         border-radius: 16px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         margin-bottom: 20px;
         border-left: 4px solid #10b981; /* Emerald Green Accent */
     }
@@ -128,18 +129,17 @@ st.markdown("""
         box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
     }
 
-    /* Headings */
-    h1 {
-        background: linear-gradient(90deg, #ffffff, #94a3b8);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+    /* Headings - Adaptive */
+    h1, h2, h3 {
+        color: var(--text-color) !important;
         font-weight: 700 !important;
     }
     
-    /* Upload Box Border */
+    /* Upload Box Border - Adaptive */
     [data-testid="stFileUploader"] {
         border-radius: 16px;
-        border: 2px dashed #374151;
+        border: 2px dashed var(--text-color);
+        opacity: 0.7;
         padding: 20px;
     }
     </style>
@@ -277,7 +277,7 @@ def get_fssai_context(query, api_key):
 # --- Main UI Layout ---
 st.markdown('<div style="text-align: center; margin-bottom: 30px;">', unsafe_allow_html=True)
 st.title("🥗 Intelligent Nutrition Tracker")
-st.markdown('<h3 style="color: #94a3b8; font-weight: 300;">scan. analyze. eat smart.</h3>', unsafe_allow_html=True)
+st.markdown('<h3 style="opacity: 0.7; font-weight: 300;">scan. analyze. eat smart.</h3>', unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
 col1, col2 = st.columns([1, 1])
@@ -367,7 +367,7 @@ with col2:
                 text = base.mark_text(radius=140).encode(
                     text=alt.Text("Value", format=".1f"),
                     order=alt.Order("Value", sort="descending"),
-                    color=alt.value("white")  
+                    color=alt.value("var(--text-color)")  
                 )
                 st.altair_chart(pie + text, use_container_width=True)
             else:
@@ -415,11 +415,11 @@ with col2:
                  color = "#10b981" if score >= 8 else "#f59e0b" if score >= 5 else "#ef4444"
                  
                  st.markdown(f"""
-                 <div style="background-color: #262730; border-radius: 16px; padding: 20px; text-align: center; border: 2px solid {color};">
-                     <h2 style="margin:0; color: #b0b0b0;">Health Score</h2>
+                 <div style="background-color: var(--secondary-background-color); border-radius: 16px; padding: 20px; text-align: center; border: 2px solid {color}; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                     <h2 style="margin:0; color: var(--text-color); opacity: 0.8;">Health Score</h2>
                      <h1 style="font-size: 4rem; color: {color}; margin: 10px 0;">{score}/10</h1>
                      <h3 style="color: {color};">{verdict_data.get('verdict', 'Unknown')}</h3>
-                     <p>{verdict_data.get('explanation', '')}</p>
+                     <p style="color: var(--text-color);">{verdict_data.get('explanation', '')}</p>
                  </div>
                  """, unsafe_allow_html=True)
                  

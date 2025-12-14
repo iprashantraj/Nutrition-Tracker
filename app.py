@@ -52,8 +52,13 @@ def load_usage():
         return {}
 
 def save_usage(data):
-    with open(USAGE_FILE, "w") as f:
-        json.dump(data, f)
+    try:
+        with open(USAGE_FILE, "w") as f:
+            json.dump(data, f)
+            f.flush()
+            os.fsync(f.fileno())
+    except Exception as e:
+        log_debug(f"Save failed: {e}")
 
 def get_usage_count(user_id):
     data = load_usage()
@@ -128,6 +133,10 @@ with st.sidebar:
              with open("debug_log.txt", "r") as f:
                  st.text_area("Log", f.read()[-500:])
         st.json(load_usage())
+        
+        if st.button("🧪 Test Increment"):
+            increment_usage(user_id)
+            st.rerun()
     
     st.markdown("### 🔑 API Access")
     user_api_key = st.text_input("Enter your Google API Key", type="password", help="Get one from aistudio.google.com")

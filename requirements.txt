@@ -10,3 +10,4 @@ python-dotenv
 pypdf
 langchain-text-splitters
 pysqlite3-binary; sys_platform == 'linux'
+numpy<2.0.0

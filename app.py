@@ -22,25 +22,28 @@ from PIL import Image
 import json
 import hashlib
 import datetime
+import uuid
 
 # --- Usage Tracking Mechanics ---
 USAGE_FILE = "usage_tracker.json"
 
 def get_user_id():
-    """Generates a unique ID based on IP (best effort)."""
-    try:
-        # Streamlit 1.39+ context
-        if hasattr(st, "context") and st.context.headers:
-            ip = st.context.headers.get("X-Forwarded-For", "unknown")
-        else:
-            # Fallback for older versions or local
-            import socket
-            ip = socket.gethostbyname(socket.gethostname())
-    except:
-        ip = "unknown_user"
+    """Generates a persistent ID using URL query parameters."""
+    # Check if ID exists in URL
+    if "uid" in st.query_params:
+        return st.query_params["uid"]
     
-    # Hash it for basic privacy
-    return hashlib.sha256(ip.encode()).hexdigest()
+    # Check session state as backup (before URL update propagates)
+    if "user_id_session" in st.session_state:
+        # Sync to URL
+        st.query_params["uid"] = st.session_state.user_id_session
+        return st.session_state.user_id_session
+
+    # Generate new ID
+    new_id = str(uuid.uuid4())
+    st.query_params["uid"] = new_id
+    st.session_state.user_id_session = new_id
+    return new_id
 
 def load_usage():
     if not os.path.exists(USAGE_FILE):

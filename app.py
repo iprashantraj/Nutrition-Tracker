@@ -18,11 +18,15 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import tempfile
+import tempfile
 from PIL import Image
 import json
 import hashlib
 import datetime
 import uuid
+import pandas as pd
+import altair as alt
+import re
 
 # --- Usage Tracking Mechanics ---
 USAGE_FILE = "usage_tracker.json"
@@ -83,31 +87,60 @@ load_dotenv()
 DEV_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # --- CSS Styling for Premium Look ---
+# --- CSS Styling for Premium Look ---
 st.markdown("""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+    html, body, [class*="css"]  {
+        font-family: 'Inter', sans-serif;
+    }
+
     .main {
         background-color: #0e1117;
     }
+    
+    /* Custom Card Style */
+    .metric-card {
+        background: linear-gradient(145deg, #1e2025, #262730);
+        padding: 24px;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        margin-bottom: 20px;
+        border-left: 4px solid #10b981; /* Emerald Green Accent */
+    }
+
+    /* Primary Button */
     .stButton>button {
         width: 100%;
-        background-color: #ff4b4b;
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
         color: white;
-        border-radius: 10px;
-        height: 50px;
-        font-weight: bold;
+        border-radius: 12px;
+        height: 55px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        border: none;
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+        transition: all 0.3s ease;
     }
     .stButton>button:hover {
-        background-color: #ff6b6b;
-        border: none;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
     }
-    .metric-card {
-        background-color: #262730;
+
+    /* Headings */
+    h1 {
+        background: linear-gradient(90deg, #ffffff, #94a3b8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 700 !important;
+    }
+    
+    /* Upload Box Border */
+    [data-testid="stFileUploader"] {
+        border-radius: 16px;
+        border: 2px dashed #374151;
         padding: 20px;
-        border-radius: 10px;
-        margin: 10px 0;
-    }
-    h1, h2, h3 {
-        color: #ffffff;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -242,8 +275,10 @@ def get_fssai_context(query, api_key):
         return f"Retrieval Error: {str(e)}"
 
 # --- Main UI Layout ---
+st.markdown('<div style="text-align: center; margin-bottom: 30px;">', unsafe_allow_html=True)
 st.title("🥗 Intelligent Nutrition Tracker")
-st.markdown("### scan. analyze. eat smart.")
+st.markdown('<h3 style="color: #94a3b8; font-weight: 300;">scan. analyze. eat smart.</h3>', unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
 col1, col2 = st.columns([1, 1])
 
@@ -282,8 +317,71 @@ with col2:
     st.subheader("📊 Health Report")
     
     if 'raw_data' in st.session_state:
-        with st.expander("📝 Extracted Data (Raw)", expanded=False):
-            st.write(st.session_state['raw_data'])
+
+        # Try to parse JSON
+        try:
+            # Clean JSON if it has markdown backticks
+            cleaned_json = st.session_state['raw_data'].replace("```json", "").replace("```", "").strip()
+            nutrition_data = json.loads(cleaned_json)
+            
+            # --- Display Nutrition Dashboard ---
+            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+            st.markdown("### 📊 Nutrition Overview")
+            
+            # 1. Key Metrics Row
+            mc1, mc2, mc3 = st.columns(3)
+            with mc1:
+                st.metric("Calories", nutrition_data.get("Calories", "N/A"))
+            with mc2:
+                st.metric("Protein", nutrition_data.get("Protein", "0g"))
+            with mc3:
+                st.metric("Fat", nutrition_data.get("Fat", "0g"))
+            
+            st.markdown("---")
+            
+            # 2. Macro Chart using Altair
+            # Prepare data for chart
+            def clean_value(val):
+                # Remove 'g' and convert to float
+                return float(re.sub(r'[^\d.]', '', str(val))) if val else 0
+
+            macros = {
+                "Carbs": clean_value(nutrition_data.get("Carbohydrates", nutrition_data.get("Carbs", "0g"))),
+                "Protein": clean_value(nutrition_data.get("Protein", "0g")),
+                "Fat": clean_value(nutrition_data.get("Fat", "0g"))
+            }
+            
+            df_macros = pd.DataFrame([
+                {"Macro": k, "Value": v} for k, v in macros.items() if v > 0
+            ])
+            
+            if not df_macros.empty:
+                base = alt.Chart(df_macros).encode(
+                    theta=alt.Theta("Value", stack=True)
+                )
+                pie = base.mark_arc(outerRadius=120).encode(
+                    color=alt.Color("Macro", scale=alt.Scale(scheme="category10")),
+                    order=alt.Order("Value", sort="descending"),
+                    tooltip=["Macro", "Value"]
+                )
+                text = base.mark_text(radius=140).encode(
+                    text=alt.Text("Value", format=".1f"),
+                    order=alt.Order("Value", sort="descending"),
+                    color=alt.value("white")  
+                )
+                st.altair_chart(pie + text, use_container_width=True)
+            else:
+                st.info("Insufficient data for Macro Chart")
+                
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            with st.expander("📝 View Raw Data Source"):
+                st.json(nutrition_data)
+
+        except Exception as e:
+            st.error(f"Could not parse nutrition data. Showing raw text.")
+            st.code(st.session_state['raw_data'][:500])
+            print(f"JSON Parse Error: {e}")
             
     if 'fssai_insight' in st.session_state:
         st.markdown('<div class="metric-card">', unsafe_allow_html=True)
@@ -298,9 +396,42 @@ with col2:
              Based on the nutrition data: {st.session_state['raw_data']}
              And FSSAI rules: {st.session_state['fssai_insight']}
              
-             Give a final Health Verdict (Healthy/Unhealthy), Rating (1-10), and 3 bullet points of advice.
-             Format as Markdown.
+             Return a valid JSON object with the following keys:
+             - "verdict": (String) "Healthy" or "Unhealthy" or "Moderate"
+             - "score": (Integer) Health Rating from 1 to 10
+             - "explanation": (String) Brief summary interpretation
+             - "advice": (List of Strings) 3 actionable bullet points
              """
-             verdict = llm.invoke(verdict_prompt).content
-             st.markdown("### 🏆 Final Verdict")
-             st.markdown(verdict)
+             try:
+                 verdict_response = llm.invoke(verdict_prompt).content
+                 # Clean potential markdown
+                 cleaned_verdict = verdict_response.replace("```json", "").replace("```", "").strip()
+                 verdict_data = json.loads(cleaned_verdict)
+                 
+                 st.markdown("### 🏆 Final Verdict")
+                 
+                 # --- Health Score Gauge UI ---
+                 score = verdict_data.get("score", 5)
+                 color = "#10b981" if score >= 8 else "#f59e0b" if score >= 5 else "#ef4444"
+                 
+                 st.markdown(f"""
+                 <div style="background-color: #262730; border-radius: 16px; padding: 20px; text-align: center; border: 2px solid {color};">
+                     <h2 style="margin:0; color: #b0b0b0;">Health Score</h2>
+                     <h1 style="font-size: 4rem; color: {color}; margin: 10px 0;">{score}/10</h1>
+                     <h3 style="color: {color};">{verdict_data.get('verdict', 'Unknown')}</h3>
+                     <p>{verdict_data.get('explanation', '')}</p>
+                 </div>
+                 """, unsafe_allow_html=True)
+                 
+                 st.markdown("#### 💡 Expert Advice")
+                 for tip in verdict_data.get("advice", []):
+                     st.info(f"• {tip}")
+                 
+                 # Celebration for healthy food
+                 if score >= 8:
+                     st.balloons()
+
+                     
+             except Exception as e:
+                 st.error("Could not generate structured verdict.")
+                 st.write(e)

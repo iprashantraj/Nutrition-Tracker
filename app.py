@@ -115,6 +115,7 @@ with st.sidebar:
         st.text(f"UserHash: {user_id[:8]}...")
         st.text(f"Count: {current_usage}")
         st.text(f"File Exists: {os.path.exists(USAGE_FILE)}")
+        st.json(load_usage())
     
     st.markdown("### 🔑 API Access")
     user_api_key = st.text_input("Enter your Google API Key", type="password", help="Get one from aistudio.google.com")

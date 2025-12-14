@@ -63,10 +63,19 @@ def increment_usage(user_id):
     data = load_usage()
     data[user_id] = data.get(user_id, 0) + 1
     save_usage(data)
+    log_debug(f"Incremented usage for {user_id}. New count: {data[user_id]}")
+
+def log_debug(msg):
+    with open("debug_log.txt", "a") as f:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        f.write(f"[{timestamp}] {msg}\n")
+
 
 
 # --- Configuration & Setup ---
 st.set_page_config(page_title="Advanced Nutrition Tracker", page_icon="🥗", layout="wide")
+log_debug("App Startup / Refresh")
+
 
 # Load environment variables (for Developer Key)
 load_dotenv()
@@ -115,6 +124,9 @@ with st.sidebar:
         st.text(f"UserHash: {user_id[:8]}...")
         st.text(f"Count: {current_usage}")
         st.text(f"File Exists: {os.path.exists(USAGE_FILE)}")
+        if os.path.exists("debug_log.txt"):
+             with open("debug_log.txt", "r") as f:
+                 st.text_area("Log", f.read()[-500:])
         st.json(load_usage())
     
     st.markdown("### 🔑 API Access")

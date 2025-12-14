@@ -106,7 +106,15 @@ st.markdown("""
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/2921/2921822.png", width=100)
     st.title("Settings")
-    st.caption("App Version: v1.0.1 (Model Fix)")
+    st.caption("App Version: v1.0.2 (Debug Mode)")
+    
+    # --- Debug Info ---
+    user_id = get_user_id()
+    current_usage = get_usage_count(user_id)
+    with st.expander("🛠️ Debug Info"):
+        st.text(f"UserHash: {user_id[:8]}...")
+        st.text(f"Count: {current_usage}")
+        st.text(f"File Exists: {os.path.exists(USAGE_FILE)}")
     
     st.markdown("### 🔑 API Access")
     user_api_key = st.text_input("Enter your Google API Key", type="password", help="Get one from aistudio.google.com")

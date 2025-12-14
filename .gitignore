@@ -14,3 +14,4 @@ venv/
 
 # Database (Generated)
 fssai_chroma_db/
+usage_tracker.json

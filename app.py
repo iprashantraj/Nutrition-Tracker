@@ -19,6 +19,51 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import tempfile
 from PIL import Image
+import json
+import hashlib
+import datetime
+
+# --- Usage Tracking Mechanics ---
+USAGE_FILE = "usage_tracker.json"
+
+def get_user_id():
+    """Generates a unique ID based on IP (best effort)."""
+    try:
+        # Streamlit 1.39+ context
+        if hasattr(st, "context") and st.context.headers:
+            ip = st.context.headers.get("X-Forwarded-For", "unknown")
+        else:
+            # Fallback for older versions or local
+            import socket
+            ip = socket.gethostbyname(socket.gethostname())
+    except:
+        ip = "unknown_user"
+    
+    # Hash it for basic privacy
+    return hashlib.sha256(ip.encode()).hexdigest()
+
+def load_usage():
+    if not os.path.exists(USAGE_FILE):
+        return {}
+    try:
+        with open(USAGE_FILE, "r") as f:
+            return json.load(f)
+    except:
+        return {}
+
+def save_usage(data):
+    with open(USAGE_FILE, "w") as f:
+        json.dump(data, f)
+
+def get_usage_count(user_id):
+    data = load_usage()
+    return data.get(user_id, 0)
+
+def increment_usage(user_id):
+    data = load_usage()
+    data[user_id] = data.get(user_id, 0) + 1
+    save_usage(data)
+
 
 # --- Configuration & Setup ---
 st.set_page_config(page_title="Advanced Nutrition Tracker", page_icon="🥗", layout="wide")
@@ -68,9 +113,9 @@ with st.sidebar:
     
     auth_status = st.empty()
     
-    # Initialize Session State for Demo Count
-    if 'demo_count' not in st.session_state:
-        st.session_state.demo_count = 0
+    # Initialize Session State (Just for UI consistency, but valid source is file)
+    user_id = get_user_id()
+    current_usage = get_usage_count(user_id)
     
     final_api_key = None
     
@@ -78,9 +123,9 @@ with st.sidebar:
         final_api_key = user_api_key
         auth_status.success("Using User Key ✅")
     else:
-        if st.session_state.demo_count < 2:
+        if current_usage < 2:
             final_api_key = DEV_API_KEY
-            remaining = 2 - st.session_state.demo_count
+            remaining = 2 - current_usage
             auth_status.info(f"Using Demo Key (Free tries left: {remaining}) ⚠️")
         else:
             auth_status.error("Demo limit exceeded! Please enter your own API Key.")
@@ -206,7 +251,10 @@ with col1:
             if final_api_key:
                 # Increment usage if using demo key
                 if not user_api_key:
-                    st.session_state.demo_count += 1
+                    increment_usage(user_id)
+                    # Verify immediate update
+                    if get_usage_count(user_id) >= 2:
+                         st.rerun()
                 
                 with st.spinner("🤖 Vision AI is reading the label..."):
                     # Step 1: Vision Extraction

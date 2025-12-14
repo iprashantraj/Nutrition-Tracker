@@ -128,7 +128,7 @@ def analyze_image_with_gemini(image, api_key):
     3. Return the data in valid JSON format.
     """
     
-    from langchain.schema.messages import HumanMessage
+    from langchain_core.messages import HumanMessage
     
     # Convert PIL image to bytes for LangChain
     import io

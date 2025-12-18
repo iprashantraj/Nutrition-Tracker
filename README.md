@@ -1,1 +1,1 @@
-URL: https://nutrition-tracker-yrpmedtak5npm5pjwxlghk.streamlit.app/
+URL: https://nutrition-tracker-prashant.streamlit.app/

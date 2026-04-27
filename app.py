@@ -310,7 +310,7 @@ with col1:
                     st.markdown(f'<div style="border: 3px solid {border_color}; border-radius: 10px; padding: 2px;">', unsafe_allow_html=True)
                     st.image(img, use_container_width=True)
                     st.markdown('</div>', unsafe_allow_html=True)
-                    if st.button(f"Sample {idx+1}", key=f"demo_btn_{idx}"):
+                    if st.button(f"Demo {idx+1}", key=f"demo_btn_{idx}"):
                         st.session_state['selected_demo'] = img_path
                         # Clear old analysis results when switching demos
                         for key in ['raw_data', 'fssai_insight']:

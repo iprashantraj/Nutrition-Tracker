@@ -149,7 +149,6 @@ st.markdown("""
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/2921/2921822.png", width=100)
     st.title("Settings")
-    st.caption("App Version: v1.0.2") # Removed Debug Mode text
     
     st.markdown("### 🔑 API Access")
     user_api_key = st.text_input("Enter your Google API Key", type="password", help="Get one from aistudio.google.com")
@@ -286,9 +285,59 @@ with col1:
     st.subheader("📸 Upload Product Label")
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
     
+    # --- Demo Mode ---
+    st.markdown("### Or try a demo")
+    
+    if 'selected_demo' not in st.session_state:
+        st.session_state['selected_demo'] = None
+        
+    demo_images = []
+    if os.path.exists("assets"):
+        for f in os.listdir("assets"):
+            if f.lower().endswith((".jpg", ".jpeg", ".png")):
+                demo_images.append(os.path.join("assets", f))
+    demo_images = sorted(demo_images)[:4]
+    
+    if demo_images:
+        demo_cols = st.columns(len(demo_images))
+        for idx, img_path in enumerate(demo_images):
+            with demo_cols[idx]:
+                try:
+                    img = Image.open(img_path)
+                    is_selected = st.session_state.get('selected_demo') == img_path
+                    border_color = "#10b981" if is_selected else "transparent"
+                    st.markdown(f'<div style="border: 3px solid {border_color}; border-radius: 10px; padding: 2px;">', unsafe_allow_html=True)
+                    st.image(img, use_container_width=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    if st.button(f"Sample {idx+1}", key=f"demo_btn_{idx}"):
+                        st.session_state['selected_demo'] = img_path
+                        # Clear old analysis results when switching demos
+                        for key in ['raw_data', 'fssai_insight']:
+                            if key in st.session_state:
+                                del st.session_state[key]
+                        st.rerun()
+                except Exception:
+                    pass
+
+    # Determine final image to process
+    image = None
+    caption_text = ""
+    
     if uploaded_file is not None:
         image = Image.open(uploaded_file)
-        st.image(image, caption='Uploaded Label', use_container_width=True)
+        caption_text = "Uploaded Label"
+        # Reset demo selection if user uploads a file
+        if st.session_state.get('selected_demo') is not None:
+            st.session_state['selected_demo'] = None
+    elif st.session_state.get('selected_demo') is not None:
+        try:
+            image = Image.open(st.session_state['selected_demo'])
+            caption_text = f"Sample: Nutrition Label {demo_images.index(st.session_state['selected_demo']) + 1}"
+        except Exception:
+            pass
+            
+    if image is not None:
+        st.image(image, caption=caption_text, use_container_width=True)
         
         analyze_btn = st.button("🚀 Analyze Nutrition", disabled=(final_api_key is None))
         

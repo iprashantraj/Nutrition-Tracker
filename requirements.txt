@@ -4,10 +4,14 @@ langchain-community
 langchain-core
 langchain-google-genai
 langchain-huggingface
-chromadb
+chromadb==0.4.24
+protobuf==4.25.3
+opentelemetry-api==1.24.0
+opentelemetry-sdk==1.24.0
+opentelemetry-exporter-otlp==1.24.0
 sentence-transformers
 python-dotenv
 pypdf
 langchain-text-splitters
-pysqlite3-binary; sys_platform == 'linux'
+pysqlite3-binary
 numpy<2.0.0

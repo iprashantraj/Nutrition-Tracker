@@ -1,17 +1,15 @@
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
 import streamlit as st
 import os
-
-# --- SQLite Fix for Streamlit Cloud (ChromaDB) ---
-try:
-    __import__('pysqlite3')
-    import sys
-    sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-except ImportError:
-    pass
 
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
+import os
+os.environ["ANONYMIZED_TELEMETRY"] = "False"
 from langchain_community.vectorstores import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 
@@ -240,6 +238,9 @@ def analyze_image_with_gemini(image, api_key):
 
 def get_fssai_context(query, api_key):
     """Retrieves relevant FSSAI regulations using RAG (Manual Implementation)."""
+    if not os.path.exists("fssai_chroma_db"):
+        return "FSSAI database not found. Please ensure it is bundled or built before querying."
+        
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     vector_db = Chroma(persist_directory="fssai_chroma_db", embedding_function=embeddings)
     
